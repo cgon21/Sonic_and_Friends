@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Animation</title>
+    <style>
+        body {}
+
+        canvas {
+            background-image: url('background.png');
+            background-size: cover;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="test" width="800" height="600">Please view this in a browser that supports the HTML5 canvas
+        element.</canvas>
+    <script>
+        let canvas = document.getElementById("test");
+        let ctx = canvas.getContext("2d");
+
+        function move(x, y, r, x_dir, y_dir, w, h, image) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2, false);
+            ctx.closePath();
+
+            x += x_dir;
+            y += y_dir;
+
+            if (x + x_dir > w - r || x + x_dir < r) {
+                x_dir = -x_dir;
+            }
+            if (y + y_dir > h - r || y + y_dir < r) {
+                y_dir = -y_dir;
+            }
+
+            return { x, y, x_dir, y_dir };
+        }
+
+        function move_flips(x, y, r, x_dir, y_dir, w, h, image) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2, false);
+            ctx.closePath();
+
+            // Draw the current image
+            ctx.drawImage(currentTails, x - 80, y - 80, 160, 160);
+
+            x += x_dir;
+            y += y_dir;
+
+            if (x + x_dir > w - r || x + x_dir < r) {
+                x_dir = -x_dir;
+                // Toggle between the two images
+                if (currentTails == tails) {
+                    currentTails = tails2;
+                }
+                else {
+                    currentTails = tails;
+                }
+            }
+            if (y + y_dir > h - r || y + y_dir < r) {
+                y_dir = -y_dir;
+            }
+
+            return { x, y, x_dir, y_dir };
+        }
+
+        function glide(x, y, r, x_dir, y_dir, w, h, image, is_climbing) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2, false);
+            ctx.closePath();
+
+            // Draw the current image
+            ctx.drawImage(currentKnuckles, x - 80, y - 80, 160, 160);
+
+            x += x_dir;
+            y += y_dir;
+
+            // Flying scenario
+            if (!is_climbing) {
+                // hit the right wall
+                if (x + x_dir > w - r) {
+                    is_climbing = true;
+                    x_dir = 0;
+                    y_dir = -3;
+                    currentKnuckles = knuckles_climb1;
+                }
+                // hit the left wall
+                else if (x + x_dir < r) {
+                    is_climbing = true;
+                    x_dir = 0;
+                    y_dir = -3;
+                    currentKnuckles = knuckles_climb2;
+                }
+            }
+            // Climbing scenario
+            else {
+                // reach the peak
+                if (y + y_dir < r + 80) {
+                    is_climbing = false;
+                    y_dir = 2;
+                    // Left side
+                    if (x <= r) {
+                        x_dir = 7;
+                        currentKnuckles = knuckles_fly1;
+                    }
+                    // Right side
+                    else if (x <= w - r) {
+                        x_dir = -7;
+                        currentKnuckles = knuckles_fly2;
+                    }
+                }
+            }
+            return { x, y, x_dir, y_dir, is_climbing };
+        }
+
+        function rotate(x, y, angle, image) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle * Math.PI / 180);
+            hueRotation += 2;
+            ctx.filter = `hue-rotate(${hueRotation}deg)`;
+            ctx.drawImage(image, -80, -80, 160, 160);
+            ctx.restore();
+            angle -= 12;
+
+            return angle;
+        }
+
+        function textTime() {
+            ctx.font = "100px Brush Script MT";
+            ctx.textBaseline = "hanging";
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+
+            let textWidth = ctx.measureText("Greenhill Zone").width;
+            let center = canvas.width / 2 - 150;
+            let text_x = center - textWidth / 2;
+            let text_y = 490;
+            ctx.fillText("Greenhill Zone", text_x, text_y);
+            ctx.strokeText("Greenhill Zone", text_x, text_y);
+        }
+
+        let sonic = new Image();
+        sonic.src = "sonic.png";
+        let hueRotation = Math.random() * 360;
+
+        let tails = new Image();
+        tails.src = "tails.png";
+        let tails2 = new Image();
+        tails2.src = "tails2.png";
+        let currentTails = tails;
+
+        let knuckles_fly1 = new Image();
+        knuckles_fly1.src = "knuckles_fly1.png";
+        let knuckles_fly2 = new Image();
+        knuckles_fly2.src = "knuckles_fly2.png";
+        let knuckles_climb1 = new Image();
+        knuckles_climb1.src = "knuckles_climb1.png";
+        let knuckles_climb2 = new Image();
+        knuckles_climb2.src = "knuckles_climb2.png";
+        let currentKnuckles = knuckles_fly1;
+
+        let sonicX = 250;
+        let sonicY = 250;
+        let tailsX = 350;
+        let tailsY = 350;
+        let r = 80;
+        let w = canvas.width;
+        let h = canvas.height;
+        let angle = 0;
+
+        let knucklesX = r;
+        let knucklesY = r + 80;
+        let knucklesX_dir = 7;
+        let knucklesY_dir = 2;
+        let isClimbing = false;
+
+        // Sonic's initial direction and speed
+        let sonicX_dir = Math.random() * 3 + 2;
+        let sonicY_dir = Math.random() * 3 + 5;
+
+        // Tails's initial direction and speed
+        let tailsX_dir = Math.random() * 3 + 7;
+        let tailsY_dir = Math.random() * 3 + 2;
+
+        setInterval(function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ({ x: sonicX, y: sonicY, x_dir: sonicX_dir, y_dir: sonicY_dir } = move(sonicX, sonicY, r, sonicX_dir, sonicY_dir, w, h, sonic));
+            angle = rotate(sonicX, sonicY, angle, sonic);
+            ({ x: tailsX, y: tailsY, x_dir: tailsX_dir, y_dir: tailsY_dir } = move_flips(tailsX, tailsY, r, tailsX_dir, tailsY_dir, w, h, currentTails));
+            ({ x: knucklesX, y: knucklesY, x_dir: knucklesX_dir, y_dir: knucklesY_dir, is_climbing: isClimbing } = glide(knucklesX, knucklesY, r, knucklesX_dir, knucklesY_dir, w, h, currentKnuckles, isClimbing));
+            textTime();
+        }, 20);
+    </script>
+</body>
+
+</html>
